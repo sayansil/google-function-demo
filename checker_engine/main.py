@@ -1,24 +1,35 @@
-from flask import Flask, render_template
-from google.cloud import storage
+from flask import Flask, render_template, request
+from werkzeug import secure_filename
+import cloudstorage as gcs
 
 app = Flask(__name__)
+
+bucket = '/img_check_bucket/'
+
+FEEDBACK_POSITIVE = 'Done'
+FEEDBACK_NEGATIVE = 'Could not complete upload'
 
 # Home page
 @app.route('/')
 def home():
-    upload_blob('img_check_bucket','tty.jpg' , 'test_456')
-    return render_template('demo_home.html')
+    return render_template('home.html')
 
-def upload_blob(bucket_name, source_file_name, destination_blob_name):
-    storage_client = storage.Client()
-    print '1'
-    bucket = storage_client.get_bucket(bucket_name)
-    print '2'
-    blob = bucket.blob(destination_blob_name)
-    print '3'
-
-    blob.upload_from_filename(source_file_name)
-
-    print('File {} uploaded to {}.'.format(
-        source_file_name,
-        destination_blob_name))
+# Submission
+@app.route('/', methods=['POST'])
+def upload_image():
+    try:
+        file = request.files['file']
+        filename = bucket + secure_filename(file.filename)
+        gcs_file = gcs.open(filename, 'w',
+                            content_type='image/jpeg',
+                            retry_params=gcs.RetryParams(initial_delay=0.2,
+                                            max_delay=5.0,
+                                            backoff_factor=2,
+                                            max_retry_period=15))
+        gcs_file.write(file.read())
+        gcs_file.close()
+        return render_template('home.html',
+            submit_feedback=FEEDBACK_POSITIVE)
+    except:
+        return render_template('home.html',
+            submit_feedback=FEEDBACK_NEGATIVE)
