@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>List of Images</title>
+</head>
+
+<body>
+
+    {% for img in images %}
+    <div class="list">
+        <div class="list-body">
+            <img src="{{img.image}}" style="height:100px;">
+            <p>{{img.name}}</p>
+        </div>
+    </div>
+    {% else %}
+    <h4>No file found</h4>
+    {% endfor %}
+
+</body>
+
+</html>

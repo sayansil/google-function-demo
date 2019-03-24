@@ -1,0 +1,14 @@
+runtime: python27
+api_version: 1
+threadsafe: true
+service: list
+
+libraries:
+- name: ssl
+  version: latest
+- name: grpcio
+  version: latest
+
+handlers:
+- url: /.*
+  script: main.app

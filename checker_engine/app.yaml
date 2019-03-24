@@ -9,5 +9,15 @@ libraries:
   version: latest
 
 handlers:
+- url: /css
+  static_dir: css
+- url: /js
+  static_dir: js
+- url: /cors
+  static_dir: cors
+- url: /img
+  static_dir: img
+- url: /server
+  static_dir: server
 - url: /.*
   script: main.app
