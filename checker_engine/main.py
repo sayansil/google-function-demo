@@ -1,74 +1,80 @@
-from flask import Flask, render_template, request
+#!flask/bin/python
+
+# Author: Ngo Duy Khanh
+# Email: ngokhanhit@gmail.com
+# Git repository: https://github.com/ngoduykhanh/flask-file-uploader
+# This work based on jQuery-File-Upload which can be found at https://github.com/blueimp/jQuery-File-Upload/
+
+import os
+import PIL
+import simplejson
+import traceback
+
+from flask import Flask, request, render_template, redirect, url_for, send_from_directory
+from flask_bootstrap import Bootstrap
 from werkzeug import secure_filename
 import cloudstorage as gcs
-import json
-import re
-import urllib
+
+from upload_file import uploadfile
+
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'hard to guess string'
+app.config['UPLOAD_FOLDER'] = '/data/'
+app.config['THUMBNAIL_FOLDER'] = 'data/thumbnail/'
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 
-bucket = '/img_check_bucket/'
-MIN_FILE_SIZE = 1  # bytes
-MAX_FILE_SIZE = 999000  # bytes
-IMAGE_TYPES = re.compile('image/(gif|p?jpeg|(x-)?png)')
-ACCEPT_FILE_TYPES = IMAGE_TYPES
+ALLOWED_EXTENSIONS = set(['gif', 'png', 'jpg', 'jpeg', 'bmp'])
+IGNORED_FILES = set(['.gitignore'])
+BUCKET = '/img_check_bucket/'
 
-# Home page
-@app.route('/')
-def home():
-    return render_template('home.html')
+bootstrap = Bootstrap(app)
 
-@app.route('/', methods=['POST'])
-def addFiles():
-    for file in request.files.getlist("files[]"):
-        result = {}
-        result['name'] = secure_filename(file.filename)
-        result['type'] = file.content_type
-        result['size'] = get_file_size(file)
-        if validate(result):
-            write_blob(
-                file.read(),
-                result
-            )
-    return render_template('home.html')
 
-def json_stringify(obj):
-    return json.dumps(obj, separators=(',', ':'))
+def allowed_file(filename):
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def validate(file):
-    if file['size'] < MIN_FILE_SIZE:
-        file['error'] = 'File is too small'
-    elif file['size'] > MAX_FILE_SIZE:
-        file['error'] = 'File is too big'
-    elif not ACCEPT_FILE_TYPES.match(file['type']):
-        file['error'] = 'Filetype not allowed'
-    else:
-        return True
-    return False
+@app.route("/upload", methods=['GET', 'POST'])
+def upload():
+    if request.method == 'POST':
+        files = request.files['file']
 
-def get_file_size(file):
-    file.seek(0, 2)  # Seek to the end of the file
-    size = file.tell()  # Get the position of EOF
-    file.seek(0)  # Reset the file position to the beginning
-    return size
+        if files:
+            filename = secure_filename(files.filename)
+            mime_type = files.content_type
 
-def write_blob(data, info):
-    key = urllib.quote(info['type'].encode('utf-8'), '') +\
-        '/' + str(hash(data)) +\
-        '/' + urllib.quote(info['name'].encode('utf-8'), '')
+            if not allowed_file(files.filename):
+                result = uploadfile(name=filename, type=mime_type, size=0, not_allowed_msg="File type not allowed")
 
-    if IMAGE_TYPES.match(info['type']):
-        try:
-            file = urllib.quote(info['name'].encode('utf-8'), '')
-            filename = bucket + file
-            print filename
-            gcs_file = gcs.open(filename, 'w',
-                                content_type='image/jpeg',
-                                retry_params=gcs.RetryParams(initial_delay=0.2,
-                                                max_delay=5.0,
-                                                backoff_factor=2,
-                                                max_retry_period=15))
-            gcs_file.write(data)
-            gcs_file.close()
-        except: #Failed to add image
-            print "GCloud Error"
+            else:
+                bucket_filename = BUCKET + secure_filename(filename)
+                gcs_file = gcs.open(bucket_filename, 'w',
+                                    content_type='image/jpeg',
+                                    retry_params=gcs.RetryParams(initial_delay=0.2,
+                                                    max_delay=5.0,
+                                                    backoff_factor=2,
+                                                    max_retry_period=15))
+                gcs_file.write(files.read())
+                gcs_file.close()
+                print bucket_filename
+
+                # return json for js call back
+                result = uploadfile(name=filename, type=mime_type)
+
+            return simplejson.dumps({"files": [result.get_file()]})
+
+    return redirect(url_for('index'))
+
+# serve static files
+@app.route("/thumbnail/<string:filename>", methods=['GET'])
+def get_thumbnail(filename):
+    return send_from_directory(app.config['THUMBNAIL_FOLDER'], filename=filename)
+
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    return render_template('index.html')
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
