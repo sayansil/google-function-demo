@@ -123,8 +123,6 @@
                 .button({icons: {primary: 'ui-icon-circle-arrow-e'}})
                 .end().find('.cancel')
                 .button({icons: {primary: 'ui-icon-cancel'}})
-                .end().find('.delete')
-                .button({icons: {primary: 'ui-icon-trash'}})
                 .end().find('.progress').progressbar();
         },
 
@@ -140,8 +138,6 @@
                 .end().find('.start')
                 .button('destroy')
                 .end().find('.cancel')
-                .button('destroy')
-                .end().find('.delete')
                 .button('destroy')
                 .end().find('.progress').progressbar('destroy');
             this._super();
