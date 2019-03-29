@@ -1,10 +1,3 @@
-#!flask/bin/python
-
-# Author: Ngo Duy Khanh
-# Email: ngokhanhit@gmail.com
-# Git repository: https://github.com/ngoduykhanh/flask-file-uploader
-# This work based on jQuery-File-Upload which can be found at https://github.com/blueimp/jQuery-File-Upload/
-
 import os
 import PIL
 import simplejson
@@ -45,7 +38,7 @@ def upload():
             mime_type = files.content_type
 
             if not allowed_file(files.filename):
-                result = uploadfile(name=filename, type=mime_type, size=0, not_allowed_msg="File type not allowed")
+                result = uploadfile(name=filename, type=mime_type, not_allowed_msg="File type not allowed")
 
             else:
                 bucket_filename = BUCKET + secure_filename(filename)
