@@ -30,34 +30,32 @@ def allowed_file(filename):
 
 @app.route("/upload", methods=['GET', 'POST'])
 def upload():
-    if request.method == 'POST':
-        files = request.files['file']
+    files = request.files['file']
 
-        if files:
-            filename = secure_filename(files.filename)
-            mime_type = files.content_type
+    if files:
+        filename = secure_filename(files.filename)
+        mime_type = files.content_type
 
-            if not allowed_file(files.filename):
-                result = uploadfile(name=filename, type=mime_type, not_allowed_msg="File type not allowed")
+        if not allowed_file(files.filename):
+            result = uploadfile(name=filename, type=mime_type, not_allowed_msg="File type not allowed")
 
-            else:
-                bucket_filename = BUCKET + secure_filename(filename)
-                gcs_file = gcs.open(bucket_filename, 'w',
-                                    content_type='image/jpeg',
-                                    retry_params=gcs.RetryParams(initial_delay=0.2,
-                                                    max_delay=5.0,
-                                                    backoff_factor=2,
-                                                    max_retry_period=15))
-                gcs_file.write(files.read())
-                gcs_file.close()
-                print bucket_filename
+        else:
+            bucket_filename = BUCKET + secure_filename(filename)
+            gcs_file = gcs.open(bucket_filename, 'w',
+                                content_type='image/jpeg',
+                                retry_params=gcs.RetryParams(initial_delay=0.2,
+                                                max_delay=5.0,
+                                                backoff_factor=2,
+                                                max_retry_period=15))
+            gcs_file.write(files.read())
+            gcs_file.close()
+            print bucket_filename
 
-                # return json for js call back
-                result = uploadfile(name=filename, type=mime_type)
+            # return json for js call back
+            result = uploadfile(name=filename, type=mime_type)
 
-            return simplejson.dumps({"files": [result.get_file()]})
+        return simplejson.dumps({"files": [result.get_file()]})
 
-    return redirect(url_for('index'))
 
 # serve static files
 @app.route("/thumbnail/<string:filename>", methods=['GET'])

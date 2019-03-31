@@ -3,12 +3,10 @@ import os
 class uploadfile():
     def __init__(self, name, type=None, not_allowed_msg=''):
         self.name = name
-        self.type = deleteType
+        self.type = type
         self.not_allowed_msg = not_allowed_msg
         self.url = "data/%s" % name
         self.thumbnail_url = "thumbnail/%s" % name
-        self.delete_url = "delete/%s" % name
-        self.delete_type = "DELETE"
 
 
     def is_image(self):
@@ -27,17 +25,13 @@ class uploadfile():
                 return {"name": self.name,
                         "type": self.type,
                         "url": self.url,
-                        "thumbnailUrl": self.thumbnail_url,
-                        "deleteUrl": self.delete_url,
-                        "deleteType": self.delete_type}
+                        "thumbnailUrl": self.thumbnail_url}
 
             # POST an normal file
             elif self.not_allowed_msg == '':
                 return {"name": self.name,
                         "type": self.type,
-                        "url": self.url,
-                        "deleteUrl": self.delete_url,
-                        "deleteType": self.delete_type}
+                        "url": self.url}
 
             # File type is not allowed
             else:
@@ -49,13 +43,9 @@ class uploadfile():
         elif self.is_image():
             return {"name": self.name,
                     "url": self.url,
-                    "thumbnailUrl": self.thumbnail_url,
-                    "deleteUrl": self.delete_url,
-                    "deleteType": self.delete_type}
+                    "thumbnailUrl": self.thumbnail_url}
 
         # GET normal file from disk
         else:
             return {"name": self.name,
-                    "url": self.url,
-                    "deleteUrl": self.delete_url,
-                    "deleteType": self.delete_type}
+                    "url": self.url}
